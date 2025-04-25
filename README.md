@@ -1,4 +1,4 @@
-# dotfile-suse
+# dotfiles-suse
 Dotfiles for Tumbleweed and Slowroll
 
 
