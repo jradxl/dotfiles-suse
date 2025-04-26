@@ -59,7 +59,7 @@ else
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin   
 fi
 
-if [[ -d "$HOME/.local/share/chezmoi" ]]; then
+if [[ -d "$HOME/.local/share/chezmoi/.git" ]]; then
     echo "Chezmoi Dotfiles repo already exists."
 else
     echo "Getting existing Dofiles-SUSE repo..."
@@ -134,4 +134,3 @@ fi
 
 ### End Chezmoi ###
 exit 0
-
