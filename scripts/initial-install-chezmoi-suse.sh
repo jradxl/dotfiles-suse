@@ -1,12 +1,10 @@
 #!/bin/bash
 
 echo "Starting Initial Install of CHEZMOI...."
+GITREPO="git@github.com:jradxl/dotfiles-suse.git"
 
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
-
-GITREPO1="https://github.com/jradxl/dotfiles-suse.git"
-GITREPO2="git@github.com:jradxl/dotfiles-suse.git"
 
 function ctrl_c() {
     echo "Trapped CTRL-C"
@@ -60,11 +58,11 @@ else
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin   
 fi
 
-if [[ -d "$HOME/.local/share/chezmoi/.git" ]]; then
+if [[ -d "$HOME/.local/share/chezmoi" ]]; then
     echo "Chezmoi Dotfiles repo already exists."
 else
     echo "Getting existing Dofiles-SUSE repo..."
-    chezmoi init "$GITREPO1"
+    chezmoi init "$GITREPO"
 fi
 
 chezmoi --version | awk '{print $1 " " $3}'
@@ -126,14 +124,13 @@ if [[ -f "$HOME/.github.configured" ]]; then
     #NOT USED as opens new shell:  chezmoi cd
     cd "$CHEZMOISRC"
     #echo "Chezmoi Repo Path: <$(pwd)>"
-    git remote set-url origin "$GITREPO2"
+    git remote set-url origin "$GITREPO"
     #echo "GIT1: <$?>"
-    echo "Confirmed New URL: $(git config --get remote.origin.url)"
+    git config --get remote.origin.url
     #echo "GIT2: <$?>"
     cd "$CURENTDIR"
 fi
 
-echo "Installation of Chezmoi completed."
-
 ### End Chezmoi ###
 exit 0
+
