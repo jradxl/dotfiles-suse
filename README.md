@@ -2,7 +2,7 @@
 Dotfiles for Tumbleweed and Slowroll
 
 #### Install   
-wget https://raw.githubusercontent.com/jradxl/dotfiles-suse/refs/heads/main/scripts/initial-install-chezmoi-suse.sh  
+wget https://raw.githubusercontent.com/jradxl/dotfiles-suse/main/scripts/initial-install-chezmoi-suse.sh  
 chmod +x initial-install-chezmoi-suse.sh  
 ./initial-install-chezmoi-suse.sh  
 
