@@ -2,6 +2,9 @@
 
 echo "Configuring SUSE to use SUDO..."
 
+# Example:
+# su - root -c "$(pwd)/configure-sudo.sh undo"
+
 # trap ctrl-c and call ctrl_c()
 trap ctrl_c INT
 
@@ -10,40 +13,86 @@ function ctrl_c() {
     exit 1
 }
 
-now=$(date +"%Y-%m-%d-%M-%S")
+if [ $(id -u) != 0 ]
+then
+    echo "This script needs to be run as root: ie sudo"
+    exit 1
+fi
+
+ARG1="$(tr [A-Z] [a-z] <<< "$1")"
+echo "<$ARG1>"
+
+if [[ "$ARG1" == "undo" ]]; then
+    echo "Undoing the SUDO Setup..."  
+    echo "WARNING: Be sure you know the root password..."
+
+    echo "CAREFUL: Do you want to quit?"
+    select yn in "Yes" "No"; do
+        case $yn in
+            Yes )
+			    echo "Quiting..."
+                exit 1
+			    break
+			    ;;
+            No )
+			    echo "Continuing to undo SUDO..."
+			    break
+			    ;;
+        esac
+    done
+fi
+
+if [[ "$ARG1" == "undo" ]]; then
+    zypper remove -y sudo-policy-sudo-auth-self
+    if [[ -f /usr/etc/sudoers.d/50-sudo-auth-self ]]; then
+        echo "ERROR: File 50-sudo-auth-self still remains..."
+        exit 1
+    fi
+
+    if [[ -f /usr/etc/sudoers.d/99-allow-sudo-extra ]]; then
+        echo "Removing 99-allow-sudo-extra"
+        rm -rf /usr/etc/sudoers.d/99-allow-sudo-extra
+    fi
+
+    if [[ -f /etc/sudoers ]]; then
+        echo "Removing /etc/sudoers "
+        rm -rf /etc/sudoers
+    fi
+
+    echo "Undoing SUDO completed."
+    exit
+fi
+
+echo "Starting to convert to SUDO use..."
+
 SUDOERS_FILE="/usr/etc/sudoers"
+SUDOERS_PATH="/usr/etc"
+SUDOERS_PATH_DIR="/usr/etc/sudoers.d"
+SUDOERS_PATH_OTHER="/etc"
+SUDOERS_PATH_OTHER_DIR="/etc/sudoers.d"
 SUDOERS_FILE_OTHER="/etc/sudoers"
-SUDOERS_NEW="/usr/etc/sudoers.new"
-SUDOERS_BAK="/usr/etc/sudoers.bak.$now"
-SUDOPATH="/usr/etc"
-SUDOPATH_D="/usr/etc/sudoers.d"
+SUDOERS_FILE_OTHER_NEW="/etc/sudoers.new"
 
 sudo zypper in -y sudo sudo-policy-sudo-auth-self
 
 getent group sudo &>/dev/null
-if [[ $? -ne 0 ]]; then
+if [[ "$?" != 0 ]]; then
 	echo "Group sudo does not exist, adding it now"
 	groupadd sudo
 	echo "Created sudo group"
-else
-	echo "Group sudo already exists"
-fi 
-
-getent group sudo | grep -qw $USER &>/dev/null
-if [[ $? -ne 0 ]]; then
-	echo "$USER is not in sudo group, adding now"
-    sudo usermod -a -G sudo $USER
-    echo "Re-Access your account and re-run this script"
+    echo "WARNING: There will be no Users in group Sudo"
     exit 1
 else
-	echo "$USER is already in sudo group"
+	echo "Group sudo already exists"
+    echo "Sudo Members: $(grep sudo: /etc/group)"
+    echo "Be sure this is correct"
 fi 
 
-if [[ $(sudo ls "$SUDOPATH_D"/50-sudo-auth-self) ]]; then
-    echo "Provided $SUDOPATH_D/50-sudo-auth-self has been installed.."
-    sudo chmod 0440 "$SUDOPATH_D"/50-sudo-auth-self
+if [[ $(sudo ls "$SUDOERS_PATH_DIR"/50-sudo-auth-self) ]]; then
+    echo "Provided $SUDOERS_PATH_DIR/50-sudo-auth-self has been installed.."
+    chmod 0440 "$SUDOERS_PATH_DIR"/50-sudo-auth-self
 else
-    echo "ERROR: $SUDOPATH_D/50-sudo-auth-self has not been installed."
+    echo "ERROR: $SUDOERS_PATH_DIR/50-sudo-auth-self has not been installed."
     exit 1
 fi
 
@@ -52,53 +101,47 @@ echo "WARNING: allowing SSH root login in case of sudo error..."
 echo "WARNING: remember to remove if sudo works"
 echo ""
 
-sudo tee "/etc/ssh/sshd_config.d/allow-root.conf" > /dev/null <<-'EOF'
+tee "/etc/ssh/sshd_config.d/allow-root.conf" > /dev/null <<-'EOF'
     PermitRootLogin yes
 EOF
 
-sudo systemctl restart sshd
+systemctl restart sshd
 
-sudo tee "$SUDOPATH_D/99-allow-sudo-extra" > /dev/null <<-'EOF'
-    Defaults env_keep = "LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE XAUTHORITY DISPLAY"
+tee "$SUDOERS_PATH_OTHER_DIR/99-allow-sudo-extra" > /dev/null <<-'EOF'
+Defaults env_keep = "LANG LC_ADDRESS LC_CTYPE LC_COLLATE LC_IDENTIFICATION LC_MEASUREMENT LC_MESSAGES LC_MONETARY LC_NAME LC_NUMERIC LC_PAPER LC_TELEPHONE LC_TIME LC_ALL LANGUAGE LINGUAS XDG_SESSION_COOKIE XAUTHORITY DISPLAY"
 EOF
 
-sudo chmod 0440 "$SUDOPATH_D/99-allow-sudo-extra"
+chmod 0440 "$SUDOERS_PATH_OTHER_DIR/99-allow-sudo-extra"
 
-#Comment out these two lines in /usr/etc/sudoers
+#Copy /usr/etc/sudoers to /etc/sudoers and...
+#Comment out these two lines in /etc/sudoers
 #Defaults targetpw   # ask for the password of the target user i.e. root
 #ALL   ALL=(ALL) ALL   # WARNING! Only use this together with 'Defaults targetpw'!
 
 if [[ -f "$SUDOERS_FILE" ]]; then
-    echo "SUDOERS file found in /usr/etc/"
-    echo "Making backup in case..."
-    sudo cp "$SUDOERS_FILE" "$SUDOERS_BAK"
-    sudo chmod 0440 "$SUDOERS_FILE"
+    echo "SUDOERS_FILE found in /usr/etc/"
+    echo "Copying to /etc"
+    cp "$SUDOERS_FILE" "$SUDOERS_FILE_OTHER"
 else
-    echo "SUDOERS file not found"
+    echo "SUDOERS_FILE not found"
     exit 1
 fi
 
-if [[ -f "$SUDOERS_FILE_OTHER" ]]; then
-    echo ""
-    echo "WARNING: SUDOERS file found in $SUDOERS_FILE_OTHER"
-    echo "Perhaps it should be removed"
-    echo ""
-fi
-
-if [[ $(sudo grep '^Defaults targetpw' "$SUDOERS_FILE") ]]; then
+if [[ $(sudo grep '^Defaults targetpw' "$SUDOERS_FILE_OTHER") ]]; then
     #echo "Found it 1"
-    sudo cat "$SUDOERS_FILE" | sed 's/^Defaults targetpw/#&/' | sudo tee "$SUDOERS_NEW" > /dev/null
-    sudo visudo -c -f "$SUDOERS_NEW" && sudo mv "$SUDOERS_NEW" "$SUDOERS_FILE"
+    cat "$SUDOERS_FILE_OTHER" | sed 's/^Defaults targetpw/#&/' | tee "$SUDOERS_FILE_OTHER_NEW" > /dev/null
+    visudo -c -f "$SUDOERS_FILE_OTHER_NEW" &&  mv "$SUDOERS_FILE_OTHER_NEW" "$SUDOERS_FILE_OTHER"
 fi
 
-if [[ $(sudo grep '^ALL' "$SUDOERS_FILE") ]]; then
+if [[ $(sudo grep '^ALL' "$SUDOERS_FILE_OTHER") ]]; then
     #echo "Found it 2"
-    sudo cat "$SUDOERS_FILE" | sed 's/^ALL/#&/' | sudo tee "$SUDOERS_NEW" > /dev/null
-    sudo visudo -c -f "$SUDOERS_NEW" && sudo mv "$SUDOERS_NEW" "$SUDOERS_FILE"
+    cat "$SUDOERS_FILE_OTHER" | sed 's/^ALL/#&/' | tee "$SUDOERS_FILE_OTHER_NEW" > /dev/null
+    visudo -c -f "$SUDOERS_FILE_OTHER_NEW" && mv "$SUDOERS_FILE_OTHER_NEW" "$SUDOERS_FILE_OTHER"
 fi
 
+chmod 0440 "$SUDOERS_FILE_OTHER"
 echo "VISUDO Parsing check..."
-sudo visudo -c
+visudo -c
 
 echo ""
 echo "Finished processing"
