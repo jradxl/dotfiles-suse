@@ -25,3 +25,30 @@ export EDITOR=/usr/bin/nano
 alias czm='chezmoi'
 alias czmcd='cd ~/.local/share/chezmoi'
 
+export XAUTHORITY="$HOME"/.Xauthority
+
+export PS1="\n[\w]\n\u@\h $ "
+
+#[ -s "${HOME}/.g/env" ] && \. "${HOME}/.g/env"
+#unalias g
+
+#export NVM_DIR="$HOME/.nvm"
+#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+#[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+#unset PATH
+#PATH="$HOME/bin"
+
+## Place Configurations below!
+mkdir -p "$HOME"/.bashrc.d
+chmod 700 "$HOME"/.bashrc.d
+for file in $(compgen -G "$HOME/.bashrc.d/*.bashrc");
+do
+  chmod 700 "$file"
+  echo "  Sourcing $file"
+  source "$file"
+done
+## Place Configurations above!
+
+echo "Chezmoi: END .bashrc"
+
