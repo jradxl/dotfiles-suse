@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260710b
+# VERSION: 20260710c
 #######################
 
 # If not running interactively, don't do anything
@@ -123,6 +123,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
         fi
     else
         echo "RUN TODAY"
+        killall gpg-agent
         eval $(keychain --gpg2 --nogui --noask --eval --agents ssh,gpg)
         keychain --list
     fi
@@ -140,7 +141,8 @@ export EDITOR="/usr/bin/nano"
 export TERMINAL="/usr/bin/konsole"
 alias czm='chezmoi'
 alias czmcd='cd ~/.local/share/chezmoi'
-export XAUTHORITY="$HOME"/.Xauthority
+
+### export XAUTHORITY="$HOME"/.Xauthority
 
 
 #######################################################
