@@ -10,6 +10,8 @@
 # here, since multilingual X sessions would not work properly if LANG is over-
 # ridden in every subshell.
 
+#VERSION: 20260710a
+
 test -s ~/.alias && . ~/.alias || true
 
 # If not running interactively, don't do anything
