@@ -50,5 +50,6 @@ do
 done
 ## Place Configurations above!
 
-echo "Chezmoi: END .bashrc"
+alias czmcd='cd ~/.local/share/chezmoi'
 
+echo "Chezmoi: END .bashrc"
