@@ -10,9 +10,12 @@
 # here, since multilingual X sessions would not work properly if LANG is over-
 # ridden in every subshell.
 
-#VERSION: 20260710a
+#ALSO, from Medium
+# https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
-test -s ~/.alias && . ~/.alias || true
+#######################
+# VERSION: 20260710b
+#######################
 
 # If not running interactively, don't do anything
 case $- in
@@ -20,38 +23,458 @@ case $- in
       *) return;;
 esac
 
-# .bashrc file from Chezmoi
-echo "Chezmoi: START .bashrc"
+echo "Jradley's CHEZMOI .bashrc..."
 
-export EDITOR=/usr/bin/nano
+############## ALIASES #################
+test -s ~/.alias && . ~/.alias || true
+if [[ -f "$HOME/.bash_aliases" ]]; then
+    source "$HOME/.bash_aliases"
+fi
+
+############## PATHMUNGE ##############
+pathmunge () {
+    case ":${PATH}:" in
+        *:"$1":*)
+            ;;
+        *)
+            if [ "$2" = "after" ] ; then
+                PATH="$PATH:$1"
+            else
+                PATH="$1:$PATH"
+            fi
+    esac
+}
+
+############# GET GITHUB LATEST ######
+get-github-latest () {
+    git ls-remote --tags --sort=v:refname $1 | grep -v "rc" | grep -v "{}"  | grep -v "release" | tail -n 1 | tr -d '[:space:]' |  rev | cut -d/ -f1 | rev
+}
+
+############## NETWORK ###############
+echo ""
+echo "Waiting for network..."
+echo ""
+wait4network() {
+    local serverAdr="github.com"
+    local count=0
+    local count_max=20
+
+    echo -e "\e[1A\e[K$(date): testing connection [$count/$count_max] - ${serverAdr}"
+    ping -c 1 $serverAdr > /dev/null 2>&1
+    while [[ $? -ne 0 ]]; do
+      let "count+=1"
+      echo -e "\e[1A\e[K$(date): testing connection [$count/$count_max] - ${serverAdr}"
+      sleep 2
+      if [[ ${count} -gt ${count_max} ]]; then
+        break
+      fi
+      ping -c 1 $serverAdr > /dev/null 2>&1
+    done
+
+    echo "$(date): Connected - ${serverAdr}"
+}
+wait4network
+
+########### KEYCHAIN START #################
+
+## Logic to run once per day
+export LOCK="$HOME/.runonce-lock"
+
+#echo "JSR1"
+if [[ "$(pwd)" == "$HOME" ]]; then
+    ##Test If run already today
+    SHOULDRUN="N"
+    if [[ ! -e "$LOCK" ]]; then  # no lock - command run for the first time
+        #"$@"
+        touch "$LOCK"
+        SHOULDRUN="Y"
+        #echo "JSR2"
+    else                         # lock exists
+        #echo "JSR3"
+        if [[ "$(find "$LOCK" -mmin +720)" ]]; then
+            #"$@"
+            SHOULDRUN="Y"
+            touch "$LOCK"
+            #echo "JSR4"
+        fi
+    fi
+    #echo "JSR5"
+    #echo "SHOULDRUN: $SHOULDRUN"
+    if [[ "$SHOULDRUN" == "Y" ]]; then
+        echo "RUN ONCE TODAY"
+        eval $(keychain --clear --gpg2 --nogui --noask --eval --agents ssh,gpg)
+
+        if [[ $(command -v chezmoi )  ]]; then
+            echo "Latest Chezmoi Version:    $(get-github-latest https://github.com/twpayne/chezmoi)"
+            echo "Installed Chezmoi Version: $(chezmoi --version  | awk '{print $3}')"
+            echo "Upgrading Chezmoi, if needed..."
+            chezmoi upgrade
+        fi
+
+        #This is intentionally not sourced, so script
+        # can be run independently. Master copy held in Github.
+        RUNONCE="NO"
+        RUNONCESCRIPT="$HOME"/.local/share/chezmoi/home-other/scripts/run-once.sh
+        if [[  -f $RUNONCESCRIPT ]]  && [[ -x $RUNONCESCRIPT ]]; then
+            echo "RUN-ONCE script is found and is executable...";
+            "$RUNONCESCRIPT"
+        else
+            echo "ERROR: RUN-ONCE script is not available."
+        fi
+    else
+        echo "RUN TODAY"
+        eval $(keychain --gpg2 --nogui --noask --eval --agents ssh,gpg)
+        keychain --list
+    fi
+fi
+
+echo ""
+################### KEYCHAIN END #####################
+
+
+export NVM_DIR="$HOME/.config/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+export EDITOR="/usr/bin/nano"
+export TERMINAL="/usr/bin/konsole"
 alias czm='chezmoi'
 alias czmcd='cd ~/.local/share/chezmoi'
-
 export XAUTHORITY="$HOME"/.Xauthority
 
-export PS1="\n[\w]\n\u@\h $ "
 
-#[ -s "${HOME}/.g/env" ] && \. "${HOME}/.g/env"
-#unalias g
+#######################################################
+# Aesthetically Pleasing Bash Configuration
+# Reset previous settings to avoid conflicts
+unset PROMPT_COMMAND
+PS1=""
 
-#export NVM_DIR="$HOME/.nvm"
-#[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-#[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# Colors with proper escaping for PS1
+RESET="\[\033[0m\]"
+BLACK="\[\033[0;30m\]"
+RED="\[\033[0;31m\]"
+GREEN="\[\033[0;32m\]"
+YELLOW="\[\033[0;33m\]"
+BLUE="\[\033[0;34m\]"
+MAGENTA="\[\033[0;35m\]"
+CYAN="\[\033[0;36m\]"
+WHITE="\[\033[0;37m\]"
+BOLD_BLACK="\[\033[1;30m\]"
+BOLD_RED="\[\033[1;31m\]"
+BOLD_GREEN="\[\033[1;32m\]"
+BOLD_YELLOW="\[\033[1;33m\]"
+BOLD_BLUE="\[\033[1;34m\]"
+BOLD_MAGENTA="\[\033[1;35m\]"
+BOLD_CYAN="\[\033[1;36m\]"
+BOLD_WHITE="\[\033[1;37m\]"
 
-#unset PATH
-#PATH="$HOME/bin"
+# Fix for echo color output in functions
+ECHO_RESET="\033[0m"
+ECHO_BLACK="\033[0;30m"
+ECHO_RED="\033[0;31m"
+ECHO_GREEN="\033[0;32m"
+ECHO_YELLOW="\033[0;33m"
+ECHO_BLUE="\033[0;34m"
+ECHO_MAGENTA="\033[0;35m"
+ECHO_CYAN="\033[0;36m"
+ECHO_WHITE="\033[0;37m"
+ECHO_BOLD_BLACK="\033[1;30m"
+ECHO_BOLD_RED="\033[1;31m"
+ECHO_BOLD_GREEN="\033[1;32m"
+ECHO_BOLD_YELLOW="\033[1;33m"
+ECHO_BOLD_BLUE="\033[1;34m"
+ECHO_BOLD_MAGENTA="\033[1;35m"
+ECHO_BOLD_CYAN="\033[1;36m"
+ECHO_BOLD_WHITE="\033[1;37m"
 
-## Place Configurations below!
-mkdir -p "$HOME"/.bashrc.d
-chmod 700 "$HOME"/.bashrc.d
-for file in $(compgen -G "$HOME/.bashrc.d/*.bashrc");
-do
-  chmod 700 "$file"
-  echo "  Sourcing $file"
-  source "$file"
-done
-## Place Configurations above!
+# Enhanced git status function with untracked changes indicator
+parse_git_status() {
+    local git_status=$(git status -s 2> /dev/null)
+    local branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+    
+    if [ -n "$branch" ]; then
+        local status_indicators=""
+        
+        # Check for untracked files
+        if echo "$git_status" | grep -q '?? '; then
+            status_indicators+="?"
+        fi
+        
+        # Check for modified files
+        if echo "$git_status" | grep -q ' M\| A\| D\| R\| C'; then
+            status_indicators+="*"
+        fi
+        
+        # Check for staged files
+        if echo "$git_status" | grep -q '^M\|^A\|^D\|^R\|^C'; then
+            status_indicators+="+"
+        fi
+        
+        # Display branch with status indicators
+        echo -n "[$branch"
+        if [ -n "$status_indicators" ]; then
+            echo -n "|$status_indicators"
+        fi
+        echo -n "]"
+    fi
+}
 
-alias czmcd='cd ~/.local/share/chezmoi'
+# Function to get exit status color
+exit_status_color() {
+    if [ $? -eq 0 ]; then
+        echo -e "${ECHO_BOLD_GREEN}✓${ECHO_RESET}"  # Green checkmark for success
+    else
+        echo -e "${ECHO_BOLD_RED}✗${ECHO_RESET}"  # Red X for error
+    fi
+}
 
-echo "Chezmoi: END .bashrc"
+# Function to get current time (HH:MM)
+current_time() {
+    date +"%H:%M"
+}
+
+# Enhanced system info for welcome message
+function clean_sysinfo() {
+    local weather_info=""
+    local ip_address=$(hostname -I 2>/dev/null | awk '{print $1}')
+    local disk_usage=$(df -h / | awk 'NR==2 {print $5 " of " $2 " used"}')
+    
+    echo ""
+    echo -e "${ECHO_BOLD_CYAN}╔════════════════════════════════════════╗${ECHO_RESET}"
+    echo -e "${ECHO_BOLD_CYAN}║            SYSTEM INFORMATION          ║${ECHO_RESET}"
+    echo -e "${ECHO_BOLD_CYAN}╚════════════════════════════════════════╝${ECHO_RESET}"
+    echo -e "${ECHO_BOLD_CYAN}$(uname -sr)${ECHO_RESET}"
+    echo -e "${ECHO_CYAN}$(date +"%A, %d %B %Y, %H:%M:%S")${ECHO_RESET}"
+    echo -e "${ECHO_YELLOW}Uptime:${ECHO_RESET} $(uptime | sed 's/up //')"
+    echo -e "${ECHO_MAGENTA}Memory:${ECHO_RESET} $(free -h | awk '/^Mem:/ {print $3 "/" $2}')"
+    echo -e "${ECHO_BOLD_RED}CPU:${ECHO_RESET} $(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {printf "%.1f%%", usage}')"
+    echo -e "${ECHO_GREEN}Disk:${ECHO_RESET} ${disk_usage}"
+    
+    if [ -n "$ip_address" ]; then
+        echo -e "${ECHO_BLUE}IP:${ECHO_RESET} ${ip_address}"
+    fi
+    
+    # Check for pending updates if apt is available
+    if command -v apt > /dev/null; then
+        alias update='sudo apt update && sudo apt upgrade -y'
+        local updates=$(apt list --upgradable 2>/dev/null | grep -c upgradable)
+        if [ "$updates" -gt 0 ]; then
+            echo -e "${ECHO_BOLD_YELLOW}Updates:${ECHO_RESET} ${updates} package(s) can be upgraded"
+        fi
+    fi
+    
+    # Check for running services
+    local processes=$(ps aux | wc -l)
+    echo -e "${ECHO_CYAN}Processes:${ECHO_RESET} $((processes-1))"
+    
+    echo ""
+}
+
+# Directory size function
+dirsize() {
+    du -sh "${1:-.}" | sort -hr
+}
+
+# Function to extract various archive types
+extract() {
+    if [ -f "$1" ]; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"     ;;
+            *.tar.gz)    tar xzf "$1"     ;;
+            *.bz2)       bunzip2 "$1"     ;;
+            *.rar)       unrar e "$1"     ;;
+            *.gz)        gunzip "$1"      ;;
+            *.tar)       tar xf "$1"      ;;
+            *.tbz2)      tar xjf "$1"     ;;
+            *.tgz)       tar xzf "$1"     ;;
+            *.zip)       unzip "$1"       ;;
+            *.Z)         uncompress "$1"  ;;
+            *.7z)        7z x "$1"        ;;
+            *)           echo "'$1' cannot be extracted via extract()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Quick directory navigation
+mkcd() {
+    mkdir -p "$1" && cd "$1"
+}
+
+# Enhanced aliases
+alias ls='ls --color=auto'
+alias ll='ls -lh --color=auto'
+alias la='ls -lah --color=auto'
+alias lt='ls -lahtr --color=auto'  # List by time, reversed
+alias l.='ls -lhd .* --color=auto' # List hidden files
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+alias cp='cp -iv'
+alias mv='mv -iv'
+alias rm='rm -i'
+alias mkdir='mkdir -pv'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias path='echo -e ${PATH//:/\\n}'
+alias now='date +"%T"'
+alias today='date +"%d-%m-%Y"'
+alias wget='wget -c'
+
+alias ports='netstat -tulanp'
+
+# Git aliases
+alias gs='git status'
+alias gl='git log --oneline --graph --decorate'
+alias ga='git add'
+alias gc='git commit -m'
+alias gp='git push'
+alias gd='git diff'
+alias gb='git branch'
+alias gco='git checkout'
+alias gpull='git pull'
+
+# File search
+alias ff='find . -type f -name'
+alias fd='find . -type d -name'
+
+# History settings
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+shopt -s histappend
+shopt -s cmdhist
+
+# Ignore duplicates in history and some common commands
+export HISTIGNORE="&:ls:ll:la:cd:exit:clear:history"
+
+# Check window size after each command
+shopt -s checkwinsize
+
+# Autocorrect typos in path names when using `cd`
+shopt -s cdspell
+
+# Enable programmable completion features
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Clean and elegant multi-line prompt with time, exit status and git information
+prompt_command() {
+    local EXIT="$?"
+    local EXIT_STATUS=""
+    
+    # Set exit status indicator
+    if [ $EXIT -eq 0 ]; then
+        EXIT_STATUS="${BOLD_GREEN}✓${RESET}"
+    else
+        EXIT_STATUS="${BOLD_RED}✗ $EXIT${RESET}"
+    fi
+    
+    # Set terminal title
+    echo -ne "\033]0;${USER}@${HOSTNAME}:${PWD/$HOME/~}\007"
+}
+
+PROMPT_COMMAND=prompt_command
+
+# Custom multi-line prompt with added features
+PS1="\n${BOLD_BLUE}┌─[${RESET}${BOLD_CYAN}\u${RESET}${BOLD_BLUE}@${RESET}${BOLD_GREEN}\h${RESET}${BOLD_BLUE}]─[${RESET}${YELLOW}\w${RESET}${BOLD_BLUE}]─[${RESET}${WHITE}\$(current_time)${RESET}${BOLD_BLUE}]${RESET}${MAGENTA}\$(parse_git_status)${RESET} \$(if [ \$? -eq 0 ]; then echo \"${BOLD_GREEN}✓${RESET}\"; else echo \"${BOLD_RED}✗${RESET}\"; fi)\n${BOLD_BLUE}└─▶${RESET} "
+
+# Show clean system info at login, only once
+if [ "$SHLVL" = 1 ]; then
+    clean_sysinfo
+fi
+
+# Set a large command history
+export HISTSIZE=10000
+
+# Set colored man pages
+export LESS_TERMCAP_mb=$'\e[1;32m'
+export LESS_TERMCAP_md=$'\e[1;32m'
+export LESS_TERMCAP_me=$'\e[0m'
+export LESS_TERMCAP_se=$'\e[0m'
+export LESS_TERMCAP_so=$'\e[01;33m'
+export LESS_TERMCAP_ue=$'\e[0m'
+export LESS_TERMCAP_us=$'\e[1;4;31m'
+
+# Weather function - requires curl and an internet connection
+weather() {
+    local city="${1:-}"
+    if [ -z "$city" ]; then
+        curl -s "wttr.in/?q&format=3"
+    else
+        curl -s "wttr.in/$city?q&format=3"
+    fi
+}
+
+# Quick note taking
+note() {
+    local notes_dir="$HOME/notes"
+    mkdir -p "$notes_dir"
+    
+    if [ -z "$1" ]; then
+        # List all notes
+        echo -e "${ECHO_BOLD_CYAN}Notes:${ECHO_RESET}"
+        ls -la "$notes_dir"
+    else
+        # Open or create a note
+        $EDITOR "$notes_dir/$1.md"
+    fi
+}
+
+# Function to display cheatsheet for common commands
+cheatsheet() {
+    local command="$1"
+    if [ -z "$command" ]; then
+        echo -e "${ECHO_BOLD_YELLOW}Available cheatsheets:${ECHO_RESET} git, bash, vim, tmux"
+        return
+    fi
+    
+    case "$command" in
+        git)
+            echo -e "${ECHO_BOLD_GREEN}Git Cheatsheet:${ECHO_RESET}"
+            echo -e "${ECHO_YELLOW}git init${ECHO_RESET} - Initialize a repository"
+            echo -e "${ECHO_YELLOW}git clone [url]${ECHO_RESET} - Clone a repository"
+            echo -e "${ECHO_YELLOW}git add [file]${ECHO_RESET} - Add file to staging"
+            echo -e "${ECHO_YELLOW}git commit -m [msg]${ECHO_RESET} - Commit changes"
+            echo -e "${ECHO_YELLOW}git status${ECHO_RESET} - Check status"
+            echo -e "${ECHO_YELLOW}git pull${ECHO_RESET} - Pull changes"
+            echo -e "${ECHO_YELLOW}git push${ECHO_RESET} - Push changes"
+            echo -e "${ECHO_YELLOW}git branch${ECHO_RESET} - List branches"
+            echo -e "${ECHO_YELLOW}git checkout [branch]${ECHO_RESET} - Switch branches"
+            ;;
+        bash)
+            echo -e "${ECHO_BOLD_GREEN}Bash Cheatsheet:${ECHO_RESET}"
+            echo -e "${ECHO_YELLOW}ctrl+a${ECHO_RESET} - Move to beginning of line"
+            echo -e "${ECHO_YELLOW}ctrl+e${ECHO_RESET} - Move to end of line"
+            echo -e "${ECHO_YELLOW}ctrl+r${ECHO_RESET} - Search history"
+            echo -e "${ECHO_YELLOW}ctrl+l${ECHO_RESET} - Clear screen"
+            echo -e "${ECHO_YELLOW}ctrl+u${ECHO_RESET} - Cut line before cursor"
+            echo -e "${ECHO_YELLOW}ctrl+k${ECHO_RESET} - Cut line after cursor"
+            echo -e "${ECHO_YELLOW}ctrl+y${ECHO_RESET} - Paste cut text"
+            ;;
+        *)
+            echo -e "${ECHO_RED}No cheatsheet available for $command${ECHO_RESET}"
+            ;;
+    esac
+}
+
+# Improved cd command that lists directory after changing
+cd() {
+    builtin cd "$@" && ls
+}
+
+# End of configuration
+echo -e "${ECHO_GREEN}Bash configuration loaded successfully!${ECHO_RESET}"
+
+echo "Jradley's .bashrc END"
