@@ -84,7 +84,7 @@ export LOCK="$HOME/.runonce-lock"
 if [[ "$(pwd)" == "$HOME" ]]; then
     ##Test If run already today
     SHOULDRUN="N"
-    if [[ ! -e "$LOCK" ]]; then  # no lock - command run for the first time
+    if [[ ! -f "$LOCK" ]]; then  # no lock - command run for the first time
         #"$@"
         touch "$LOCK"
         SHOULDRUN="Y"
@@ -95,14 +95,15 @@ if [[ "$(pwd)" == "$HOME" ]]; then
             #"$@"
             SHOULDRUN="Y"
             touch "$LOCK"
-            #echo "JSR4"
+            echo "JSR4"
         fi
     fi
     #echo "JSR5"
     #echo "SHOULDRUN: $SHOULDRUN"
     if [[ "$SHOULDRUN" == "Y" ]]; then
         echo "RUN ONCE TODAY"
-        eval $(keychain --clear --gpg2 --nogui --noask --eval --agents ssh,gpg)
+        #OLD eval $(keychain --clear --gpg2 --nogui --noask --eval --agents "ssh,gpg" )
+        eval $(keychain --clear --gpg2 --nogui --noask --eval)
 
         if [[ $(command -v chezmoi )  ]]; then
             echo "Latest Chezmoi Version:    $(get-github-latest https://github.com/twpayne/chezmoi)"
@@ -124,7 +125,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
     else
         echo "RUN TODAY"
         killall gpg-agent
-        eval $(keychain --gpg2 --nogui --noask --eval --agents ssh,gpg)
+        eval $(keychain --gpg2 --nogui --noask --eval)
         keychain --list
     fi
 fi
