@@ -49,6 +49,14 @@ else
     sudo zypper install -y git
 fi
 
+echo "Checking for Keychain. May ask for superuser access."
+if [[ $(command -v kechain) ]]; then
+    echo "Keychain is present, continuing..."
+else
+    echo "Keychain is NOT present, installing..."
+    sudo zypper install -y keychain
+fi
+
 ### CHEZMOI ###
 if [[ $(command -v chezmoi ) ]]; then
     echo "Chezmoi already installed. Trying to upgrade..."
