@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260711a
+# VERSION: 20260712a
 #######################
 
 # If not running interactively, don't do anything
@@ -95,7 +95,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
             #"$@"
             SHOULDRUN="Y"
             touch "$LOCK"
-            echo "JSR4"
+            #echo "JSR4"
         fi
     fi
     #echo "JSR5"
