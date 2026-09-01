@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260901a
+# VERSION: 20260901b
 #######################
 
 # If not running interactively, don't do anything
@@ -488,5 +488,3 @@ echo -e "${ECHO_GREEN}Bash configuration loaded successfully!${ECHO_RESET}"
 pathmunge /home/jradley/.pixi/bin
 
 echo "Jradley's .bashrc END"
-exit 0
-
