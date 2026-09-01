@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260712a
+# VERSION: 20260901a
 #######################
 
 # If not running interactively, don't do anything
@@ -88,20 +88,20 @@ if [[ "$(pwd)" == "$HOME" ]]; then
         #"$@"
         touch "$LOCK"
         SHOULDRUN="Y"
-        #echo "JSR2"
+        echo "JSR2"
     else                         # lock exists
-        #echo "JSR3"
+        echo "JSR3"
         if [[ "$(find "$LOCK" -mmin +720)" ]]; then
             #"$@"
             SHOULDRUN="Y"
             touch "$LOCK"
-            #echo "JSR4"
+            echo "JSR4"
         fi
     fi
-    #echo "JSR5"
+    echo "JSR5"
     #echo "SHOULDRUN: $SHOULDRUN"
     if [[ "$SHOULDRUN" == "Y" ]]; then
-        echo "RUN ONCE TODAY"
+        echo "*************************** RUN ONCE TODAY **********************"
         #OLD eval $(keychain --clear --gpg2 --nogui --noask --eval --agents "ssh,gpg" )
         eval $(keychain --clear --gpg2 --nogui --noask --eval)
 
@@ -115,7 +115,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
         #This is intentionally not sourced, so script
         # can be run independently. Master copy held in Github.
         RUNONCE="NO"
-        RUNONCESCRIPT="$HOME"/.local/share/chezmoi/home-other/scripts/run-once.sh
+        RUNONCESCRIPT="$HOME"/.local/share/chezmoi/scripts/run-once.sh
         if [[  -f $RUNONCESCRIPT ]]  && [[ -x $RUNONCESCRIPT ]]; then
             echo "RUN-ONCE script is found and is executable...";
             "$RUNONCESCRIPT"
@@ -123,7 +123,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
             echo "ERROR: RUN-ONCE script is not available."
         fi
     else
-        echo "RUN TODAY"
+        echo "****************** RUN TODAY *****************"
         killall gpg-agent
         eval $(keychain --gpg2 --nogui --noask --eval)
         keychain --list
@@ -140,6 +140,7 @@ export NVM_DIR="$HOME/.config/nvm"
 
 export EDITOR="/usr/bin/nano"
 export TERMINAL="/usr/bin/konsole"
+#NO export TERM="/usr/bin/konsole"
 alias czm='chezmoi'
 alias czmcd='cd ~/.local/share/chezmoi'
 
@@ -480,4 +481,12 @@ cd() {
 # End of configuration
 echo -e "${ECHO_GREEN}Bash configuration loaded successfully!${ECHO_RESET}"
 
+#NOT NEEDED
+#. "$HOME/.local/share/../bin/env"
+
+#export PATH="/home/jradley/.pixi/bin:$PATH"
+pathmunge /home/jradley/.pixi/bin
+
 echo "Jradley's .bashrc END"
+exit 0
+
