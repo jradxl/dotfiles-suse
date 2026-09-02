@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260902a
+# VERSION: 20260902b
 #######################
 
 # If not running interactively, don't do anything
@@ -487,11 +487,11 @@ echo -e "${ECHO_GREEN}Bash configuration loaded successfully!${ECHO_RESET}"
 #export PATH="$HOME/.pixi/bin:$PATH"
 pathmunge "$HOME"/.pixi/bin
 
+echo "Miniconda Config start..."
 #NOTE Conda
 # Add to .bashrc: conda init
 # Remove from .bashrc: conda init --reverse bash
 # Disable pn startup: conda config --set auto_activate_base false
-
 # >>> conda initialize >>>
 # !! Contents witin this block are managed by 'conda init' !!
 __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.bash' 'hook' 2> /dev/null)"
@@ -506,6 +506,12 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+if [[ -f "$HOME/miniconda3/bin/conda"  ]]; then
+	echo "    Miniconda Installed Version: $("$HOME"/miniconda3/bin/conda --version)"
+else
+	echo "    Miniconda not installed."
+fi
+echo "Miniconda Config end."
 
 echo "Jradley's .bashrc END"
 
