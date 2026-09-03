@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#VERSION: 20260903a
+
 echo "RUN-ONCE Started..."
 
 check-pixi() {
@@ -17,7 +19,17 @@ check-pixi() {
 	fi
 }
 
+check-flatpak() {
+	if [[ $(command -v flatpak ) ]]; then
+		echo "    Updating flatpaks, if any. May ask for sudo password."
+		flatpak update
+    else
+		echo "    Flatpak not installed"
+    fi
+}
+
 check-pixi
+check-flatpak
 
 echo "RUN-ONCE Finished."
 exit 0
