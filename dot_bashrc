@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260902b
+# VERSION: 20260904a
 #######################
 
 # If not running interactively, don't do anything
@@ -101,6 +101,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
     #echo "JSR5"
     #echo "SHOULDRUN: $SHOULDRUN"
     if [[ "$SHOULDRUN" == "Y" ]]; then
+		echo ""
         echo "*************************** RUN ONCE TODAY **********************"
         #OLD eval $(keychain --clear --gpg2 --nogui --noask --eval --agents "ssh,gpg" )
         eval $(keychain --clear --gpg2 --nogui --noask --eval)
@@ -123,7 +124,8 @@ if [[ "$(pwd)" == "$HOME" ]]; then
             echo "ERROR: RUN-ONCE script is not available."
         fi
     else
-        echo "****************** RUN TODAY *****************"
+		echo ""
+        echo "*************************** RUN TODAY **********************"
         killall gpg-agent
         eval $(keychain --gpg2 --nogui --noask --eval)
         keychain --list
@@ -131,6 +133,7 @@ if [[ "$(pwd)" == "$HOME" ]]; then
 fi
 
 echo ""
+echo "*************************** RUN COMPLETED **********************"
 ################### KEYCHAIN END #####################
 
 
