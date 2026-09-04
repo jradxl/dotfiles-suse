@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#VERSION: 20260904a
+#VERSION: 20260904b
 
 echo "RUN-ONCE Started..."
 
@@ -29,8 +29,19 @@ check-flatpak() {
     fi
 }
 
+check-juliaup() {
+	echo "    CHECKING FOR JULIAUP Updates"	
+	if [[ -x "$HOME"/.juliaup/bin/juliaup ]]; then
+		echo "    Updating juliaup, if any."
+		"$HOME"/.juliaup/bin/juliaup self update
+    else
+		echo "    Juliaup not installed"
+    fi
+}
+
 check-pixi
 check-flatpak
+check-juliaup
 
 echo "RUN-ONCE Finished."
 exit 0
