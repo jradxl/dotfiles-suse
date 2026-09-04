@@ -14,7 +14,7 @@
 # https://ibrahimmansur4.medium.com/modifying-your-bash-shell-a-comprehensive-configuration-guide-fd5a081843d8
 
 #######################
-# VERSION: 20260904b
+# VERSION: 20260904c
 #######################
 
 # If not running interactively, don't do anything
@@ -519,6 +519,7 @@ echo "Miniconda Config end."
 echo "Juliaup Config start..."
 if [[ -f "$HOME"/.juliaup/bin/juliaup  ]]; then
 	echo "    Juliaup Installed Version: $("$HOME"/.juliaup/bin/juliaup --version)"
+	pathmunge "$HOME"/.juliaup/bin
 else
 	echo "    Juliaup not installed."
 fi
